@@ -227,7 +227,7 @@ class Controller
         $this->needCat($motherId);
         $this->needSex($motherId, 'F', 'матерью может быть только самка');
 
-        $id = $this->db->addLitter($motherId, $this->textOrNull($data, 'name', self::MAX_NAME));
+        $id = $this->db->addLitter($motherId, $this->textOrNull($data, 'name', self::MAX_NAME, 'название помёта'));
 
         $this->ok(['id' => $id], 201);
     }
@@ -406,12 +406,12 @@ class Controller
         }
     }
 
-    private function string(array $data, string $key, int $max): string
+    private function string(array $data, string $key, int $max, ?string $label = null): string
     {
-        $value = trim((string) ($this->textOrNull($data, $key, $max) ?? ''));
+        $value = trim((string) ($this->textOrNull($data, $key, $max, $label) ?? ''));
 
         if ($value === '') {
-            $this->fail(400, 'поле ' . $key . ' обязательное');
+            $this->fail(400, 'поле ' . ($label ?? $this->label($key)) . ' обязательное');
 
             exit;
         }
@@ -419,7 +419,7 @@ class Controller
         return $value;
     }
 
-    private function textOrNull(array $data, string $key, int $max): ?string
+    private function textOrNull(array $data, string $key, int $max, ?string $label = null): ?string
     {
         if (!isset($data[$key]) || $data[$key] === '') {
             return null;
@@ -428,7 +428,7 @@ class Controller
         $value = trim((string) $data[$key]);
 
         if (mb_strlen($value) > $max) {
-            $this->fail(400, 'поле ' . $key . ' не длиннее ' . $max . ' символов');
+            $this->fail(400, 'поле ' . ($label ?? $this->label($key)) . ' не длиннее ' . $max . ' символов');
 
             exit;
         }
@@ -441,7 +441,7 @@ class Controller
         $value = $this->intOrNull($data, $key);
 
         if ($value === null) {
-            $this->fail(400, 'поле ' . $key . ' обязательное и должно быть числом');
+            $this->fail(400, 'поле ' . $this->label($key) . ' обязательное и должно быть числом');
 
             exit;
         }
@@ -469,12 +469,27 @@ class Controller
         }
 
         if (!is_numeric($data[$key]) || (int) $data[$key] != $data[$key]) {
-            $this->fail(400, 'поле ' . $key . ' должно быть целым числом');
+            $this->fail(400, 'поле ' . $this->label($key) . ' должно быть целым числом');
 
             exit;
         }
 
         return (int) $data[$key];
+    }
+
+    private function label(string $key): string
+    {
+        $labels = [
+            'name' => 'кличка',
+            'sex' => 'пол',
+            'age' => 'возраст',
+            'breed' => 'порода',
+            'mother_id' => 'мать',
+            'litter_id' => 'помёт',
+            'sire_id' => 'отец',
+        ];
+
+        return $labels[$key] ?? $key;
     }
 
     private function query(string $key): ?string

@@ -154,12 +154,12 @@ input:focus, select:focus {
 @keyframes pop { from { transform: translateY(10px) scale(.98); opacity: 0; } }
 .modal-head {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 20px 22px 0;
+  gap: 16px; padding: 20px 22px 0;
 }
-.modal-head h2 { font-size: 20px; }
+.modal-head h2 { font-size: 20px; min-width: 0; overflow-wrap: anywhere; }
 .icon {
   border: 0; background: #f4f5fa; border-radius: 9px; width: 30px; height: 30px;
-  cursor: pointer; color: var(--muted); font-size: 14px;
+  cursor: pointer; color: var(--muted); font-size: 14px; flex: none;
 }
 .icon:hover { background: var(--line); color: var(--ink); }
 .modal-body { padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; }
@@ -180,6 +180,7 @@ input:focus, select:focus {
 .toast {
   background: var(--ink); color: #fff; padding: 11px 16px; border-radius: 11px; font-size: 14px;
   box-shadow: 0 12px 30px rgba(20, 24, 48, .22); animation: pop .16s ease-out; max-width: 320px;
+  overflow-wrap: anywhere;
 }
 .toast.bad { background: var(--danger); }
 

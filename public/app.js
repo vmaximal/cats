@@ -16,6 +16,41 @@ function esc(value) {
   ));
 }
 
+function plural(count, one, few, many) {
+  const last = count % 10;
+  const hundred = count % 100;
+
+  if (count === 1) {
+    return one;
+  }
+
+  if ([2, 3, 4].includes(last) && ![12, 13, 14].includes(hundred)) {
+    return few;
+  }
+
+  return many;
+}
+
+function motherChain(litterId) {
+  const chain = [];
+  const seen = new Set();
+  let id = state.litterDetails.find((detail) => detail.litter.id === litterId)?.litter.mother_id;
+
+  while (id && !seen.has(id)) {
+    chain.push(id);
+    seen.add(id);
+    id = state.all.find((cat) => cat.id === id)?.litter_id;
+  }
+
+  return chain;
+}
+
+function hasPups(catId) {
+  return state.litterDetails.some((detail) => (
+    detail.litter.mother_id === catId || detail.sires.some((sire) => sire.id === catId)
+  ));
+}
+
 function ageText(age) {
   age = Number(age) || 0;
 
@@ -97,8 +132,10 @@ async function loadCats() {
   state.cats = shown.cats;
   state.all = all.cats;
   $('#catsCount').textContent = shown.cats.length;
+  $('#catsEmpty').textContent = state.all.length
+    ? 'Кошек с такими условиями нет'
+    : 'Кошек пока нет — добавь первую';
   $('#catsEmpty').hidden = shown.cats.length > 0;
-  $('#cats').innerHTML = shown.cats.map(catCard).join('');
 }
 
 async function loadLitters() {
@@ -112,8 +149,28 @@ async function loadLitters() {
   $('#litters').innerHTML = details.map(litterCard).join('');
 }
 
+function renderCats() {
+  $('#cats').innerHTML = state.cats.map(catCard).join('');
+}
+
 function refresh() {
-  return Promise.all([loadCats(), loadLitters()]);
+  return Promise.all([loadCats(), loadLitters()]).then(renderCats);
+}
+
+function roleLine(cat) {
+  const mothers = state.litterDetails.filter((detail) => detail.litter.mother_id === cat.id).length;
+  const sires = state.litterDetails.filter((detail) => detail.sires.some((sire) => sire.id === cat.id)).length;
+  const parts = [];
+
+  if (mothers) {
+    parts.push('мать: ' + mothers + ' ' + plural(mothers, 'помёт', 'помёта', 'помётов'));
+  }
+
+  if (sires) {
+    parts.push('отец: ' + sires + ' ' + plural(sires, 'помёт', 'помёта', 'помётов'));
+  }
+
+  return parts.length ? '<div class="card-extra">' + esc(parts.join(' · ')) + '</div>' : '';
 }
 
 function catCard(cat) {
@@ -125,6 +182,7 @@ function catCard(cat) {
     + '</div>'
     + sexBadge(cat.sex)
     + '</div>'
+    + roleLine(cat)
     + (cat.breed ? '<div class="card-extra"><span>порода:</span> ' + esc(cat.breed) + '</div>' : '')
     + '<div class="card-actions">'
     + '<button class="btn small" data-edit="' + cat.id + '">изменить</button>'
@@ -135,7 +193,11 @@ function catCard(cat) {
 
 function litterCard(detail) {
   const litter = detail.litter;
-  const used = new Set(detail.sires.map((sire) => sire.id).concat(detail.mother ? [detail.mother.id] : []));
+  const used = new Set(
+    detail.kittens.map((kitten) => kitten.id)
+      .concat(detail.sires.map((sire) => sire.id))
+      .concat(detail.mother ? [detail.mother.id] : [])
+  );
   const candidates = state.all.filter((cat) => cat.sex === 'M' && !used.has(cat.id));
 
   const sires = detail.sires.length
@@ -149,11 +211,11 @@ function litterCard(detail) {
   const picker = candidates.length
     ? '<div class="row tight picker">'
       + '<select data-sires-for="' + litter.id + '">'
-      + candidates.map((cat) => '<option value="' + cat.id + '">' + esc(cat.name) + '</option>').join('')
+      + candidates.map((cat) => '<option value="' + cat.id + '">' + esc(cat.name) + ' · ' + ageText(cat.age) + '</option>').join('')
       + '</select>'
       + '<button class="btn small" data-addsire="' + litter.id + '">добавить</button>'
       + '</div>'
-    : '';
+    : '<div class="muted">свободных самцов нет</div>';
 
   return '<article class="card">'
     + '<div class="card-head">'
@@ -163,7 +225,7 @@ function litterCard(detail) {
         ? '<span data-cat="' + detail.mother.id + '">' + esc(detail.mother.name) + '</span>'
         : '—') + '</div>'
     + '</div>'
-    + '<span class="badge">' + detail.kittens.length + ' ' + (detail.kittens.length === 1 ? 'котёнок' : 'котят') + '</span>'
+    + '<span class="badge">' + detail.kittens.length + ' ' + plural(detail.kittens.length, 'котёнок', 'котёнка', 'котят') + '</span>'
     + '</div>'
     + '<div class="block"><h3>отцы</h3><div class="pills">' + sires + '</div>' + picker + '</div>'
     + '<div class="block"><h3>котята</h3><div class="pills">'
@@ -201,12 +263,14 @@ function sexSelect(sex) {
 
 function catForm(cat) {
   const editing = cat !== null && cat !== undefined;
-  const free = (detail) => editing && (
-    detail.litter.mother_id === cat.id
-    || detail.sires.some((sire) => sire.id === cat.id)
+  const free = (detail) => !editing || (
+    detail.litter.mother_id !== cat.id
+    && !detail.sires.some((sire) => sire.id === cat.id)
+    && !motherChain(detail.litter.id).includes(cat.id)
   );
+  const lockedSex = editing && hasPups(cat.id);
   const options = ['<option value="">без помёта</option>']
-    .concat(state.litterDetails.filter((detail) => !free(detail))
+    .concat(state.litterDetails.filter(free)
       .map((detail) => '<option value="' + detail.litter.id + '"'
         + (editing && cat.litter_id === detail.litter.id ? ' selected' : '') + '>'
         + esc(litterName(detail)) + '</option>'))
@@ -219,7 +283,9 @@ function catForm(cat) {
     + '<div class="field"><label for="cfName">кличка</label>'
     + '<input id="cfName" name="name" maxlength="60" required value="' + esc(editing ? cat.name : '') + '"></div>'
     + '<div class="field"><label for="cfSex">пол</label>'
-    + '<select id="cfSex" name="sex" required>' + sexSelect(editing ? cat.sex : '') + '</select></div>'
+    + '<select id="cfSex" name="sex" required' + (lockedSex ? ' disabled' : '') + '>' + sexSelect(editing ? cat.sex : '') + '</select>'
+    + (lockedSex ? '<small class="muted">у кошки есть помёт или отцы, пол не менять</small>' : '')
+    + '</div>'
     + '</div>'
     + '<div class="form-row">'
     + '<div class="field narrow"><label for="cfAge">возраст, лет</label>'
@@ -289,8 +355,16 @@ function checkForm(form) {
       return;
     }
 
-    if (input.type === 'number' && (!Number.isInteger(Number(value)) || Number(value) < 0)) {
-      problems.push([input, 'нужно целое число от 0']);
+    if (input.type === 'number') {
+      const number = Number(value);
+
+      if (!Number.isInteger(number)) {
+        problems.push([input, 'нужно целое число']);
+      } else if (number < Number(input.min || 0)) {
+        problems.push([input, 'минимум ' + (input.min || 0)]);
+      } else if (input.max !== '' && number > Number(input.max)) {
+        problems.push([input, 'максимум ' + input.max]);
+      }
     }
   });
 
@@ -485,7 +559,7 @@ function applyFilters() {
   };
 
   clearTimeout(applyFilters.timer);
-  applyFilters.timer = setTimeout(() => loadCats().catch(fail), 250);
+  applyFilters.timer = setTimeout(() => loadCats().then(renderCats).catch(fail), 250);
 }
 
 document.addEventListener('click', (event) => {
