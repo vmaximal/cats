@@ -117,10 +117,10 @@ function refresh() {
 }
 
 function catCard(cat) {
-  return '<article class="card">'
+  return '<article class="card" data-cat="' + cat.id + '">'
     + '<div class="card-head">'
     + '<div>'
-    + '<div class="card-name" data-cat="' + cat.id + '">' + esc(cat.name) + '</div>'
+    + '<div class="card-name">' + esc(cat.name) + '</div>'
     + '<div class="card-age">' + ageText(cat.age) + '</div>'
     + '</div>'
     + sexBadge(cat.sex)
@@ -128,7 +128,6 @@ function catCard(cat) {
     + (cat.breed ? '<div class="card-extra"><span>порода:</span> ' + esc(cat.breed) + '</div>' : '')
     + (cat.notes ? '<div class="card-extra">' + esc(cat.notes) + '</div>' : '')
     + '<div class="card-actions">'
-    + '<button class="btn small" data-cat="' + cat.id + '">карточка</button>'
     + '<button class="btn small" data-edit="' + cat.id + '">изменить</button>'
     + '<button class="btn small danger" data-del="' + cat.id + '">удалить</button>'
     + '</div>'
@@ -149,7 +148,7 @@ function litterCard(detail) {
     : '<span class="muted">не указаны</span>';
 
   const picker = candidates.length
-    ? '<div class="row tight">'
+    ? '<div class="row tight picker">'
       + '<select data-sires-for="' + litter.id + '">'
       + candidates.map((cat) => '<option value="' + cat.id + '">' + esc(cat.name) + '</option>').join('')
       + '</select>'
