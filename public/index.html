@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Кошки</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="page">
+
+  <header class="top">
+    <div class="top-title">
+      <span class="logo">🐾</span>
+      <div>
+        <h1>Кошки</h1>
+        <p class="muted">учёт, родня и помёты</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="btn" id="addLitter">+ Помёт</button>
+      <button class="btn primary" id="addCat">+ Кошка</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="cats">Кошки <span class="badge" id="catsCount">0</span></button>
+    <button class="tab" data-tab="litters">Помёты <span class="badge" id="littersCount">0</span></button>
+  </nav>
+
+  <section class="panel" data-panel="cats">
+    <div class="filters">
+      <div class="field">
+        <label for="fSex">Пол</label>
+        <select id="fSex">
+          <option value="">любой</option>
+          <option value="F">самка</option>
+          <option value="M">самец</option>
+        </select>
+      </div>
+      <div class="field narrow">
+        <label for="fMinAge">возраст от</label>
+        <input id="fMinAge" type="number" min="0" placeholder="0">
+      </div>
+      <div class="field narrow">
+        <label for="fMaxAge">возраст до</label>
+        <input id="fMaxAge" type="number" min="0" placeholder="∞">
+      </div>
+      <button class="btn ghost" id="fReset">сбросить</button>
+    </div>
+
+    <div class="grid" id="cats"></div>
+    <p class="empty" id="catsEmpty" hidden>Кошек с такими условиями нет</p>
+  </section>
+
+  <section class="panel" data-panel="litters" hidden>
+    <div class="grid" id="litters"></div>
+    <p class="empty" id="littersEmpty" hidden>Помётов пока нет</p>
+  </section>
+
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-bg" data-close></div>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2 id="modalTitle">Кошка</h2>
+      <button class="icon" data-close title="закрыть">✕</button>
+    </div>
+
+    <div class="modal-body" id="modalBody"></div>
+
+    <div class="modal-foot" id="modalFoot"></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>

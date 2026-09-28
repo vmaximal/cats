@@ -39,20 +39,22 @@ class DB
         return (int) $this->pdo->lastInsertId();
     }
 
-    public function updateCat(int $id, string $name, string $sex, int $age, ?string $breed = null, ?string $notes = null): void
+    public function updateCat(int $id, string $name, string $sex, int $age, ?string $breed = null, ?string $notes = null, ?int $litterId = null): void
     {
         $query = $this->pdo->prepare(
-            'UPDATE cats SET name = :name, sex = :sex, age = :age, breed = :breed, notes = :notes
+            'UPDATE cats
+             SET name = :name, sex = :sex, age = :age, breed = :breed, notes = :notes, litter_id = :litter_id
              WHERE id = :id'
         );
 
         $query->execute([
-            'id'    => $id,
-            'name'  => $name,
-            'sex'   => $sex,
-            'age'   => $age,
-            'breed' => $breed,
-            'notes' => $notes,
+            'id'        => $id,
+            'name'      => $name,
+            'sex'       => $sex,
+            'age'       => $age,
+            'breed'     => $breed,
+            'notes'     => $notes,
+            'litter_id' => $litterId,
         ]);
     }
 

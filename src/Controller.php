@@ -152,13 +152,22 @@ class Controller
             return;
         }
 
+        $litterId = $this->intOrNull($data, 'litter_id');
+
+        if ($litterId !== null && $this->db->getLitter($litterId) === null) {
+            $this->fail(404, 'помёта с id ' . $litterId . ' нет');
+
+            return;
+        }
+
         $this->db->updateCat(
             $id,
             $name,
             $sex,
             $age,
             $this->stringOrNull($data, 'breed'),
-            $this->stringOrNull($data, 'notes')
+            $this->stringOrNull($data, 'notes'),
+            $litterId
         );
 
         $this->ok(['cat' => $this->db->getCat($id)]);
@@ -298,9 +307,9 @@ class Controller
 
     private function string(array $data, string $key): string
     {
-        $value = $this->stringOrNull($data, $key);
+        $value = trim((string) ($this->stringOrNull($data, $key) ?? ''));
 
-        if ($value === null) {
+        if ($value === '') {
             $this->fail(400, 'поле ' . $key . ' обязательное');
 
             exit;

@@ -4,5 +4,14 @@
 
 http://localhost:3000 {
 	encode zstd br gzip
-	php_server
+
+	handle /api/* {
+		rewrite * /index.php
+		php_server
+	}
+
+	handle {
+		root * public
+		file_server
+	}
 }
