@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Maxim\Cats;
+namespace Cat;
 
 use PDO;
 
@@ -245,16 +245,28 @@ class DB
         return $query->fetchAll();
     }
 
-    public function listKittensBySire(int $sireId): array
+    public function isSireAnywhere(int $catId): bool
+    {
+        $query = $this->pdo->prepare('SELECT 1 FROM litter_sires WHERE sire_id = :id LIMIT 1');
+        $query->execute(['id' => $catId]);
+
+        return $query->fetchColumn() !== false;
+    }
+
+    public function isAncestor(int $ancestorId, int $catId): bool
     {
         $query = $this->pdo->prepare(
-            'SELECT cats.* FROM cats
-             JOIN litter_sires ON litter_sires.litter_id = cats.litter_id
-             WHERE litter_sires.sire_id = :sire_id
-             ORDER BY cats.name'
+            'WITH RECURSIVE up(id) AS (
+                 SELECT litters.mother_id FROM cats
+                 JOIN litters ON litters.id = cats.litter_id
+                 WHERE cats.id = :cat
+                 UNION
+                 SELECT litters.mother_id FROM litters JOIN up ON litters.id = up.id
+             )
+             SELECT 1 FROM up WHERE id = :ancestor LIMIT 1'
         );
-        $query->execute(['sire_id' => $sireId]);
+        $query->execute(['cat' => $catId, 'ancestor' => $ancestorId]);
 
-        return $query->fetchAll();
+        return $query->fetchColumn() !== false;
     }
 }

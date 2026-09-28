@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/src/DB.php';
+require __DIR__ . '/src/Controller.php';
 
-use Maxim\Cats\Controller;
-use Maxim\Cats\DB;
+use Cat\Controller;
+use Cat\DB;
 
 $controller = new Controller(new DB());
 

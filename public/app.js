@@ -135,7 +135,7 @@ function catCard(cat) {
 
 function litterCard(detail) {
   const litter = detail.litter;
-  const used = new Set(detail.sires.map((sire) => sire.id));
+  const used = new Set(detail.sires.map((sire) => sire.id).concat(detail.mother ? [detail.mother.id] : []));
   const candidates = state.all.filter((cat) => cat.sex === 'M' && !used.has(cat.id));
 
   const sires = detail.sires.length
@@ -201,10 +201,15 @@ function sexSelect(sex) {
 
 function catForm(cat) {
   const editing = cat !== null && cat !== undefined;
+  const free = (detail) => editing && (
+    detail.litter.mother_id === cat.id
+    || detail.sires.some((sire) => sire.id === cat.id)
+  );
   const options = ['<option value="">без помёта</option>']
-    .concat(state.litterDetails.map((detail) => '<option value="' + detail.litter.id + '"'
-      + (editing && cat.litter_id === detail.litter.id ? ' selected' : '') + '>'
-      + esc(litterName(detail)) + '</option>'))
+    .concat(state.litterDetails.filter((detail) => !free(detail))
+      .map((detail) => '<option value="' + detail.litter.id + '"'
+        + (editing && cat.litter_id === detail.litter.id ? ' selected' : '') + '>'
+        + esc(litterName(detail)) + '</option>'))
     .join('');
 
   openModal(
@@ -415,7 +420,7 @@ async function openCat(id) {
 
 async function removeCat(cat) {
   const message = 'Удалить кошку «' + cat.name + '»?'
-    + (cat.litter_id ? ' Помёт тоже удалится, котята останутся без него.' : '');
+    + (cat.litter_id ? ' Её помёты тоже удалятся, котята останутся без них.' : '');
 
   if (!confirm(message)) {
     return;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Maxim\Cats;
+namespace Cat;
 
 use PDOException;
 
@@ -124,12 +124,18 @@ class Controller
             return;
         }
 
+        $litterId = $this->intOrNull($data, 'litter_id');
+
+        if ($litterId !== null) {
+            $this->needLitter($litterId);
+        }
+
         $id = $this->db->addCat(
             $name,
             $sex,
             $age,
             $this->textOrNull($data, 'breed', self::MAX_BREED),
-            $this->intOrNull($data, 'litter_id')
+            $litterId
         );
 
         $this->ok(['id' => $id], 201);
@@ -157,8 +163,12 @@ class Controller
 
         $litterId = $this->intOrNull($data, 'litter_id');
 
-        if ($litterId !== null && $this->db->getLitter($litterId) === null) {
-            $this->fail(404, 'помёта с id ' . $litterId . ' нет');
+        if ($litterId !== null) {
+            $this->canBeInLitter($id, $litterId);
+        }
+
+        if ($sex !== $this->db->getCat($id)['sex'] && $this->hasPups($id)) {
+            $this->fail(400, 'у кошки есть помёт или отцы, пол менять нельзя');
 
             return;
         }
@@ -215,6 +225,7 @@ class Controller
         $motherId = $this->int($data, 'mother_id');
 
         $this->needCat($motherId);
+        $this->needSex($motherId, 'F', 'матерью может быть только самка');
 
         $id = $this->db->addLitter($motherId, $this->textOrNull($data, 'name', self::MAX_NAME));
 
@@ -242,6 +253,13 @@ class Controller
         $sireId = $this->int($data, 'sire_id');
 
         $this->needCat($sireId);
+        $this->canBeSire($litterId, $sireId);
+
+        if ($this->isSire($litterId, $sireId)) {
+            $this->fail(409, 'этот кот уже отец в этом помёте');
+
+            return;
+        }
 
         $this->db->addSire($litterId, $sireId);
 
@@ -252,9 +270,90 @@ class Controller
     {
         $this->needLitter($litterId);
 
+        if (!$this->isSire($litterId, $sireId)) {
+            $this->fail(404, 'кошки с id ' . $sireId . ' в отцах этого помёта нет');
+
+            return;
+        }
+
         $this->db->removeSire($litterId, $sireId);
 
         $this->ok(['deleted' => $sireId, 'sires' => $this->db->listSires($litterId)]);
+    }
+
+    private function canBeInLitter(int $catId, int $litterId): void
+    {
+        $this->needLitter($litterId);
+
+        $litter = $this->db->getLitter($litterId);
+        $motherId = (int) $litter['mother_id'];
+
+        if ($motherId === $catId) {
+            $this->fail(400, 'мать не может быть котёнком своего помёта');
+
+            exit;
+        }
+
+        if ($this->isSire($litterId, $catId)) {
+            $this->fail(400, 'котёнок не может быть отцом своего помёта');
+
+            exit;
+        }
+
+        if ($this->db->isAncestor($catId, $motherId)) {
+            $this->fail(400, 'кошка окажется потомком самой себя');
+
+            exit;
+        }
+    }
+
+    private function canBeSire(int $litterId, int $sireId): void
+    {
+        $litter = $this->db->getLitter($litterId);
+        $cat    = $this->db->getCat($sireId);
+
+        if ($cat['sex'] !== 'M') {
+            $this->fail(400, 'отцом может быть только самец');
+
+            exit;
+        }
+
+        if ((int) $litter['mother_id'] === $sireId) {
+            $this->fail(400, 'мать не может быть отцом своего помёта');
+
+            exit;
+        }
+
+        if ((int) ($cat['litter_id'] ?? 0) === $litterId) {
+            $this->fail(400, 'котёнок не может быть отцом своего помёта');
+
+            exit;
+        }
+    }
+
+    private function needSex(int $catId, string $sex, string $message): void
+    {
+        if ($this->db->getCat($catId)['sex'] !== $sex) {
+            $this->fail(400, $message);
+
+            exit;
+        }
+    }
+
+    private function isSire(int $litterId, int $sireId): bool
+    {
+        foreach ($this->db->listSires($litterId) as $sire) {
+            if ((int) $sire['id'] === $sireId) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function hasPups(int $catId): bool
+    {
+        return $this->db->listLitters($catId) !== [] || $this->db->isSireAnywhere($catId);
     }
 
     private function ok(array $data, int $code = 200): void
@@ -365,8 +464,14 @@ class Controller
 
     private function intOrNull(array $data, string $key): ?int
     {
-        if (!isset($data[$key]) || $data[$key] === '' || !is_numeric($data[$key])) {
+        if (!isset($data[$key]) || $data[$key] === '') {
             return null;
+        }
+
+        if (!is_numeric($data[$key]) || (int) $data[$key] != $data[$key]) {
+            $this->fail(400, 'поле ' . $key . ' должно быть целым числом');
+
+            exit;
         }
 
         return (int) $data[$key];
