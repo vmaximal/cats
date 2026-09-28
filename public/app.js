@@ -232,11 +232,86 @@ function catForm(cat) {
     + '<button class="btn primary" id="saveCat">сохранить</button>'
   );
 
+  markRequired($('#catForm'));
   $('#cfName').focus();
+}
+
+function markRequired(form) {
+  let marked = 0;
+
+  form.querySelectorAll('[required]').forEach((input) => {
+    if (input.disabled) {
+      return;
+    }
+
+    const label = form.querySelector('label[for="' + input.id + '"]');
+
+    if (label) {
+      label.insertAdjacentHTML('beforeend', ' <span class="req">*</span>');
+    }
+
+    marked++;
+  });
+
+  if (marked) {
+    form.insertAdjacentHTML('afterbegin', '<p class="muted hint">* — обязательные поля</p>');
+  }
+}
+
+function clearErrors(form) {
+  form.querySelectorAll('.field.invalid').forEach((wrap) => wrap.classList.remove('invalid'));
+  form.querySelectorAll('.err').forEach((hint) => hint.remove());
+}
+
+function showError(input, message) {
+  const wrap = input.closest('.field');
+  const hint = document.createElement('small');
+
+  wrap.classList.add('invalid');
+  hint.className = 'err';
+  hint.textContent = message;
+  wrap.appendChild(hint);
+}
+
+function checkForm(form) {
+  const problems = [];
+
+  form.querySelectorAll('[required]').forEach((input) => {
+    const value = input.value.trim();
+
+    if (input.disabled || value === '') {
+      if (!input.disabled) {
+        problems.push([input, 'это поле обязательное']);
+      }
+
+      return;
+    }
+
+    if (input.type === 'number' && (!Number.isInteger(Number(value)) || Number(value) < 0)) {
+      problems.push([input, 'нужно целое число от 0']);
+    }
+  });
+
+  clearErrors(form);
+
+  if (!problems.length) {
+    return true;
+  }
+
+  problems.forEach(([input, message]) => showError(input, message));
+  problems[0][0].focus();
+  toast('Заполни обязательные поля', true);
+
+  return false;
 }
 
 async function submitCat() {
   const form = $('#catForm');
+
+  if (!checkForm(form)) {
+    return;
+  }
+
   const id = form.dataset.id;
   const litterId = field(form, 'litter_id').value;
 
@@ -283,10 +358,17 @@ function litterForm() {
     + '<button class="btn primary" id="saveLitter"'
     + (mothers.length ? '' : ' disabled') + '>создать</button>'
   );
+
+  markRequired($('#litterForm'));
 }
 
 async function submitLitter() {
   const form = $('#litterForm');
+
+  if (!checkForm(form)) {
+    return;
+  }
+
   const name = field(form, 'name').value.trim();
 
   try {
@@ -479,6 +561,17 @@ document.addEventListener('change', (event) => {
 document.addEventListener('input', (event) => {
   if (event.target.id === 'fMinAge' || event.target.id === 'fMaxAge') {
     applyFilters();
+  }
+
+  const wrap = event.target.closest('.field.invalid');
+
+  if (wrap) {
+    wrap.classList.remove('invalid');
+
+    const hint = wrap.querySelector('.err');
+    if (hint) {
+      hint.remove();
+    }
   }
 });
 

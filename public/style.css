@@ -79,6 +79,13 @@ p { margin: 0; }
 .field { display: flex; flex-direction: column; gap: 5px; min-width: 150px; }
 .field.narrow { min-width: 110px; }
 label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: lowercase; }
+.req { color: var(--danger); font-weight: 700; }
+.hint { margin-top: -4px; }
+.err { color: var(--danger); font-size: 12px; }
+.field.invalid input, .field.invalid select, .field.invalid textarea {
+  border-color: var(--danger); background: #fff8f8; box-shadow: 0 0 0 3px #fdeeee;
+}
+.field.invalid label { color: var(--danger); }
 input, select, textarea {
   font: inherit; color: var(--ink); background: #fbfbfe; border: 1px solid var(--line);
   border-radius: 10px; padding: 9px 11px; width: 100%;
