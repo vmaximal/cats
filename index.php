@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 require __DIR__ . '/vendor/autoload.php';
 
-header('Content-Type: text/plain; charset=utf-8');
+use Maxim\Cats\Controller;
+use Maxim\Cats\DB;
 
-var_dump("hello");
+$controller = new Controller(new DB());
+
+$controller->handle($_SERVER['REQUEST_METHOD'] ?? 'GET', $_SERVER['REQUEST_URI'] ?? '/');
