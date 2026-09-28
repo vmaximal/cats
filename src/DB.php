@@ -20,11 +20,11 @@ class DB
         $this->pdo->exec('PRAGMA foreign_keys = ON');
     }
 
-    public function addCat(string $name, string $sex, int $age, ?string $breed = null, ?string $notes = null, ?int $litterId = null): int
+    public function addCat(string $name, string $sex, int $age, ?string $breed = null, ?int $litterId = null): int
     {
         $query = $this->pdo->prepare(
-            'INSERT INTO cats (name, sex, age, breed, notes, litter_id)
-             VALUES (:name, :sex, :age, :breed, :notes, :litter_id)'
+            'INSERT INTO cats (name, sex, age, breed, litter_id)
+             VALUES (:name, :sex, :age, :breed, :litter_id)'
         );
 
         $query->execute([
@@ -32,18 +32,17 @@ class DB
             'sex'       => $sex,
             'age'       => $age,
             'breed'     => $breed,
-            'notes'     => $notes,
             'litter_id' => $litterId,
         ]);
 
         return (int) $this->pdo->lastInsertId();
     }
 
-    public function updateCat(int $id, string $name, string $sex, int $age, ?string $breed = null, ?string $notes = null, ?int $litterId = null): void
+    public function updateCat(int $id, string $name, string $sex, int $age, ?string $breed = null, ?int $litterId = null): void
     {
         $query = $this->pdo->prepare(
             'UPDATE cats
-             SET name = :name, sex = :sex, age = :age, breed = :breed, notes = :notes, litter_id = :litter_id
+             SET name = :name, sex = :sex, age = :age, breed = :breed, litter_id = :litter_id
              WHERE id = :id'
         );
 
@@ -53,7 +52,6 @@ class DB
             'sex'       => $sex,
             'age'       => $age,
             'breed'     => $breed,
-            'notes'     => $notes,
             'litter_id' => $litterId,
         ]);
     }

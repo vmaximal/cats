@@ -126,7 +126,6 @@ function catCard(cat) {
     + sexBadge(cat.sex)
     + '</div>'
     + (cat.breed ? '<div class="card-extra"><span>порода:</span> ' + esc(cat.breed) + '</div>' : '')
-    + (cat.notes ? '<div class="card-extra">' + esc(cat.notes) + '</div>' : '')
     + '<div class="card-actions">'
     + '<button class="btn small" data-edit="' + cat.id + '">изменить</button>'
     + '<button class="btn small danger" data-del="' + cat.id + '">удалить</button>'
@@ -213,20 +212,18 @@ function catForm(cat) {
     '<form class="form" id="catForm" data-id="' + (editing ? cat.id : '') + '">'
     + '<div class="form-row">'
     + '<div class="field"><label for="cfName">кличка</label>'
-    + '<input id="cfName" name="name" maxlength="80" required value="' + esc(editing ? cat.name : '') + '"></div>'
+    + '<input id="cfName" name="name" maxlength="60" required value="' + esc(editing ? cat.name : '') + '"></div>'
     + '<div class="field"><label for="cfSex">пол</label>'
     + '<select id="cfSex" name="sex" required>' + sexSelect(editing ? cat.sex : '') + '</select></div>'
     + '</div>'
     + '<div class="form-row">'
     + '<div class="field narrow"><label for="cfAge">возраст, лет</label>'
-    + '<input id="cfAge" name="age" type="number" min="0" max="40" required value="' + (editing ? cat.age : 0) + '"></div>'
+    + '<input id="cfAge" name="age" type="number" min="0" max="30" required value="' + (editing ? cat.age : 0) + '"></div>'
     + '<div class="field"><label for="cfBreed">порода</label>'
-    + '<input id="cfBreed" name="breed" value="' + esc(editing ? cat.breed : '') + '" placeholder="не указана"></div>'
+    + '<input id="cfBreed" name="breed" maxlength="80" value="' + esc(editing ? cat.breed : '') + '" placeholder="не указана"></div>'
     + '</div>'
     + '<div class="field"><label for="cfLitter">помёт</label>'
     + '<select id="cfLitter" name="litter_id">' + options + '</select></div>'
-    + '<div class="field"><label for="cfNotes">заметки</label>'
-    + '<textarea id="cfNotes" name="notes">' + esc(editing ? cat.notes : '') + '</textarea></div>'
     + '</form>',
     '<button class="btn" data-close>отмена</button>'
     + '<button class="btn primary" id="saveCat">сохранить</button>'
@@ -320,7 +317,6 @@ async function submitCat() {
     sex: field(form, 'sex').value,
     age: Number(field(form, 'age').value),
     breed: field(form, 'breed').value.trim(),
-    notes: field(form, 'notes').value.trim(),
     litter_id: litterId === '' ? null : Number(litterId)
   };
 
@@ -351,7 +347,7 @@ function litterForm() {
     + '<div class="field"><label for="lfMother">мать</label>'
     + '<select id="lfMother" name="mother_id" required' + (mothers.length ? '' : ' disabled') + '>' + options + '</select></div>'
     + '<div class="field"><label for="lfName">название</label>'
-    + '<input id="lfName" name="name" placeholder="помёт от 12.05"></div>'
+    + '<input id="lfName" name="name" maxlength="60" placeholder="помёт от 12.05"></div>'
     + '<p class="muted">Отцов добавишь потом — у одного помёта их может быть несколько.</p>'
     + '</form>',
     '<button class="btn" data-close>отмена</button>'
@@ -397,7 +393,6 @@ async function openCat(id) {
       + '<span class="muted">' + ageText(cat.age) + '</span>'
       + (cat.breed ? '<span class="muted">· ' + esc(cat.breed) + '</span>' : '')
       + '</div>'
-      + (cat.notes ? '<div class="block">' + esc(cat.notes) + '</div>' : '')
       + '<div class="block"><h3>мать</h3>' + (mother ? pill(mother) : '<span class="muted">неизвестна</span>') + '</div>'
       + '<div class="block"><h3>отцы</h3><div class="pills">'
       + (sires.length ? sires.map(pill).join('') : '<span class="muted">не указаны</span>')

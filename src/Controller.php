@@ -8,6 +8,10 @@ use PDOException;
 
 class Controller
 {
+    private const MAX_AGE = 30;
+    private const MAX_NAME = 60;
+    private const MAX_BREED = 80;
+
     private DB $db;
 
     private array $routes = [
@@ -110,8 +114,8 @@ class Controller
     {
         $data = $this->input();
 
-        $name = $this->string($data, 'name');
-        $sex  = $this->string($data, 'sex');
+        $name = $this->string($data, 'name', self::MAX_NAME);
+        $sex  = $this->string($data, 'sex', 1);
         $age  = $this->age($data);
 
         if (!in_array($sex, ['M', 'F'], true)) {
@@ -124,8 +128,7 @@ class Controller
             $name,
             $sex,
             $age,
-            $this->stringOrNull($data, 'breed'),
-            $this->stringOrNull($data, 'notes'),
+            $this->textOrNull($data, 'breed', self::MAX_BREED),
             $this->intOrNull($data, 'litter_id')
         );
 
@@ -142,8 +145,8 @@ class Controller
 
         $data = $this->input();
 
-        $name = $this->string($data, 'name');
-        $sex  = $this->string($data, 'sex');
+        $name = $this->string($data, 'name', self::MAX_NAME);
+        $sex  = $this->string($data, 'sex', 1);
         $age  = $this->age($data);
 
         if (!in_array($sex, ['M', 'F'], true)) {
@@ -165,8 +168,7 @@ class Controller
             $name,
             $sex,
             $age,
-            $this->stringOrNull($data, 'breed'),
-            $this->stringOrNull($data, 'notes'),
+            $this->textOrNull($data, 'breed', self::MAX_BREED),
             $litterId
         );
 
@@ -214,7 +216,7 @@ class Controller
 
         $this->needCat($motherId);
 
-        $id = $this->db->addLitter($motherId, $this->stringOrNull($data, 'name'));
+        $id = $this->db->addLitter($motherId, $this->textOrNull($data, 'name', self::MAX_NAME));
 
         $this->ok(['id' => $id], 201);
     }
@@ -305,9 +307,9 @@ class Controller
         }
     }
 
-    private function string(array $data, string $key): string
+    private function string(array $data, string $key, int $max): string
     {
-        $value = trim((string) ($this->stringOrNull($data, $key) ?? ''));
+        $value = trim((string) ($this->textOrNull($data, $key, $max) ?? ''));
 
         if ($value === '') {
             $this->fail(400, 'поле ' . $key . ' обязательное');
@@ -318,13 +320,21 @@ class Controller
         return $value;
     }
 
-    private function stringOrNull(array $data, string $key): ?string
+    private function textOrNull(array $data, string $key, int $max): ?string
     {
         if (!isset($data[$key]) || $data[$key] === '') {
             return null;
         }
 
-        return (string) $data[$key];
+        $value = trim((string) $data[$key]);
+
+        if (mb_strlen($value) > $max) {
+            $this->fail(400, 'поле ' . $key . ' не длиннее ' . $max . ' символов');
+
+            exit;
+        }
+
+        return $value;
     }
 
     private function int(array $data, string $key): int
@@ -344,8 +354,8 @@ class Controller
     {
         $age = $this->int($data, 'age');
 
-        if ($age < 0) {
-            $this->fail(400, 'age не может быть отрицательным');
+        if ($age < 0 || $age > self::MAX_AGE) {
+            $this->fail(400, 'возраст должен быть от 0 до ' . self::MAX_AGE . ' лет');
 
             exit;
         }

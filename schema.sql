@@ -1,11 +1,10 @@
 -- Кошки
 CREATE TABLE IF NOT EXISTS cats (
     id        INTEGER PRIMARY KEY AUTOINCREMENT,
-    name      TEXT NOT NULL,
+    name      TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 60),
     sex       TEXT NOT NULL CHECK (sex IN ('M', 'F')),
-    age       INTEGER NOT NULL CHECK (age >= 0),
-    breed     TEXT,
-    notes     TEXT,
+    age       INTEGER NOT NULL CHECK (age BETWEEN 0 AND 30),
+    breed     TEXT CHECK (breed IS NULL OR length(breed) <= 80),
     litter_id INTEGER REFERENCES litters (id)
 );
 
@@ -16,7 +15,7 @@ CREATE INDEX IF NOT EXISTS idx_cats_litter ON cats (litter_id);
 -- Помёты: у каждого одна мать
 CREATE TABLE IF NOT EXISTS litters (
     id        INTEGER PRIMARY KEY AUTOINCREMENT,
-    name      TEXT,
+    name      TEXT CHECK (name IS NULL OR length(name) <= 60),
     mother_id INTEGER NOT NULL REFERENCES cats (id)
 );
 
