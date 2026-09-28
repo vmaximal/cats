@@ -1,6 +1,7 @@
 # Кошки
 
 Учёт кошек, помётов и отцов.
+Максимально просто: без composer, без docker, на sqlite
 
 ## Что нельзя
 
@@ -22,6 +23,6 @@
 ## Запуск
 
 1. Скачать [FrankenPHP](https://github.com/php/frankenphp/releases#release-v1.12.7) и положить бинарник в корень приложения.
-2. Создать базу данных — `./frankenphp php-cli migrate.php`
-3. Запустить — `./frankenphp run`
+2. Создать базу данных - `./frankenphp php-cli migrate.php`
+3. Запустить - `./frankenphp run`
 4. Открыть http://localhost:3000/
