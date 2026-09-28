@@ -1,0 +1,8 @@
+{
+	frankenphp
+}
+
+http://localhost:3000 {
+	encode zstd br gzip
+	php_server
+}
