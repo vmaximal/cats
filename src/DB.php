@@ -261,7 +261,9 @@ class DB
                  JOIN litters ON litters.id = cats.litter_id
                  WHERE cats.id = :cat
                  UNION
-                 SELECT litters.mother_id FROM litters JOIN up ON litters.id = up.id
+                 SELECT litters.mother_id FROM up
+                 JOIN cats ON cats.id = up.id
+                 JOIN litters ON litters.id = cats.litter_id
              )
              SELECT 1 FROM up WHERE id = :ancestor LIMIT 1'
         );
